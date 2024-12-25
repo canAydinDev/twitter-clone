@@ -23,6 +23,9 @@ export const createUser = async ({
     await User.create({
       id: userId,
       username: username?.toLowerCase(),
+      name,
+      email,
+      image,
     });
   } catch (err: unknown) {
     if (err instanceof Error) {
