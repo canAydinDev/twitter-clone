@@ -9,6 +9,15 @@ const Page = async () => {
   if (!user) return null;
   const userInfo = await fetchUser(user.id);
   if (userInfo?.onboarded) redirect("/");
+
+  const userData = {
+    id: user.id,
+    objectId: userInfo?._id,
+    userName: userInfo ? userInfo?.username : user?.username,
+    name: userInfo ? userInfo?.name : user?.firstName || "",
+    bio: userInfo ? userInfo?.bio : "",
+    image: userInfo ? userInfo?.image : user?.imageUrl,
+  };
   return (
     <>
       <main className="mx-auto flex flex-coll justify-start px-10 py-20">
@@ -26,6 +35,7 @@ const Page = async () => {
             routing="hash"
           />
         </div>
+        <AccountInfo user={userData} />
       </main>
     </>
   );
