@@ -7,6 +7,7 @@ import TopBar from "@/components/shared/TopBar";
 import LeftSideBar from "@/components/shared/LeftSideBar";
 import RightSideBar from "@/components/shared/RightSideBar";
 import BottomBar from "@/components/shared/BottomBar";
+import { currentUser } from "@clerk/nextjs/server";
 
 export const metadata: Metadata = {
   title: "Twiddle",
@@ -18,30 +19,34 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
-  return (
-    <>
-      <html lang="en">
-        <ClerkProvider>
-          <body>
-            <main className={`${inter.className}`}>
-              <TopBar />
-              <main className="flex flex-row">
-                <LeftSideBar />
-                <section className="main-section">
-                  <div className="w-full flx justify-center items-center min-h-screen">
-                    {children}
-                  </div>
-                </section>
-                <RightSideBar />
+  const user = await currentUser();
+  if (!user) {
+    return (
+      <>
+        <html lang="en">
+          <ClerkProvider>
+            <body>
+              <main className={`${inter.className}`}>
+                <TopBar />
+
+                <main className="flex flex-row">
+                  <LeftSideBar />
+                  <section className="main-container">
+                    <div className="w-full flex justify-center items-center min-h-screen">
+                      {children}
+                    </div>
+                  </section>
+                  <RightSideBar />
+                </main>
+                <BottomBar />
               </main>
-              <BottomBar />
-            </main>
-          </body>
-        </ClerkProvider>
-      </html>
-    </>
-  );
+            </body>
+          </ClerkProvider>
+        </html>
+      </>
+    );
+  }
 }
