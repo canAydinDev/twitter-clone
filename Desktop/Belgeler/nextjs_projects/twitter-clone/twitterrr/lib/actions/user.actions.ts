@@ -1,8 +1,6 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import User from "../models/user.model";
-import { connectToDB } from "../mongoose";
 import db from "../../utils/db";
 interface CreateUserParams {
   userId: string;
@@ -48,20 +46,20 @@ interface updateUserParams {
 //   }
 // };
 
-export const fetchUser = async (userId: string) => {
-  try {
-    connectToDB();
-    return await User.findOne({
-      id: userId,
-    });
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      throw new Error(`Failed to fetch user: ${err.message}`);
-    } else {
-      console.log("Failed to fetch user", err);
-    }
-  }
-};
+// export const fetchUser = async (userId: string) => {
+//   try {
+//     connectToDB();
+//     return await User.findOne({
+//       id: userId,
+//     });
+//   } catch (err: unknown) {
+//     if (err instanceof Error) {
+//       throw new Error(`Failed to fetch user: ${err.message}`);
+//     } else {
+//       console.log("Failed to fetch user", err);
+//     }
+//   }
+// };
 
 // export const updateUser = async ({
 //   userId,
@@ -107,7 +105,7 @@ export const createUserAction = async ({
   await db.user.create({
     data: {
       id: userId,
-      username,
+      username: username?.toLowerCase(),
       name,
       email,
       image,
