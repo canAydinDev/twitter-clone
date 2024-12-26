@@ -114,6 +114,15 @@ export const createUserAction = async ({
   });
 };
 
+export const fetchUserById = async (id: string) => {
+  const user = await db.user.findFirst({
+    where: {
+      id,
+    },
+  });
+  return user;
+};
+
 export const updateUserAction = async ({
   userId,
   name,
