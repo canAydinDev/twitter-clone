@@ -22,6 +22,7 @@ interface Props {
     bio: string;
   };
 }
+//hello
 const AccountInfo = ({ user }: Props) => {
   const pathname = usePathname();
   const router = useRouter();
