@@ -1,3 +1,4 @@
+import AccountInfo from "@/components/forms/AccountInfo";
 import { fetchUser } from "@/lib/actions/user.actions";
 import { UserProfile } from "@clerk/nextjs";
 import { currentUser } from "@clerk/nextjs/server";
@@ -20,7 +21,7 @@ const Page = async () => {
   };
   return (
     <>
-      <main className="mx-auto flex flex-coll justify-start px-10 py-20">
+      <main className="mx-auto flex flex-col justify-start px-10 py-20">
         <div className="text-center">
           <h1 className="head-text">Welcome to Twitterrr</h1>
           <p className="mt-3 text-base-regular text-light-2">
