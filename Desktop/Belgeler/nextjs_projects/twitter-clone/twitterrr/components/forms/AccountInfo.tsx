@@ -15,7 +15,7 @@ import { UserValidation } from "@/lib/validations/user";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { updateUser } from "@/lib/actions/user.actions";
+import { updateUserAction } from "@/lib/actions/user.actions";
 interface Props {
   user: {
     id: string;
@@ -38,7 +38,7 @@ const AccountInfo = ({ user }: Props) => {
     },
   });
   const onSubmit = async (values: z.infer<typeof UserValidation>) => {
-    await updateUser({
+    await updateUserAction({
       userId: user.id,
       bio: values.bio,
       path: pathname,

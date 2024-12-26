@@ -1,0 +1,41 @@
+datasource db {
+  provider          = "postgresql"
+  url               = env("DATABASE_URL")
+  directUrl         = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+
+
+model User {
+  id           String   @id @default(uuid())
+  email        String   @unique
+  username     String   @unique
+  name         String
+  image        String
+  bio          String
+  onboarded    Boolean  @default(false)
+  tweets       Tweet[]
+  retweets     Tweet[]  @relation("UserRetweets")
+  likedTweets  Tweet[]  @relation("UserLikes")
+  replies      Tweet[]  @relation("UserReplies")
+  groups Group[]
+}
+
+model Tweet {
+  id          String  @id @default(uuid())
+  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId      String
+  retweetedBy User[]  @relation("UserRetweets")
+  likedBy     User[]  @relation("UserLikes")
+  repliedBy   User[]  @relation("UserReplies")
+}
+
+model Group{
+  id String @id
+  user User @relation(fields:[userId], references: [id], onDelete: Cascade)
+  userId String
+}
