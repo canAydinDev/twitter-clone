@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import db from "../../utils/db";
+
+export type SortOrder = "asc" | "desc";
 interface CreateUserParams {
   userId: string;
   email: string;
@@ -19,6 +21,13 @@ interface updateUserParams {
   bio?: string;
   image?: string;
   path?: string;
+}
+interface FetchUserActionParams {
+  userId: string;
+  searchString?: string;
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: SortOrder; // Prisma’da "asc" | "desc"
 }
 
 // export const createUser = async ({
@@ -152,6 +161,88 @@ export const updateUserAction = async ({
       throw new Error(`Failed to update user: ${err.message}`);
     } else {
       console.log("Failed to update user", err);
+    }
+  }
+};
+
+// export const fetchUserAction =async ({userId, searchString='',pageNumber=1, pageSize=20, sortBy='desc'}:{
+//   userId: string; searchString?: string; pageNumber?: number; pageSize?:number; sortBy?:SortOrder;
+// })=> {
+//   try {
+//     const skipAmount = (pageNumber-1)*pageSize
+//     const regex = new RegExp(searchString,'i')
+//     const query :FilterQuery<typeof User>={
+//       id:{$ne:userId}
+//     }
+//     if(searchString.trim()!==''){
+//       query.$or=[
+//         {username:{$regex:regex}},
+//         {name:{$regex:regex}}
+//       ]
+//     }
+
+//     const sortOptions = {createdAt:sortBy}
+//     const userQuery = User.find(query)
+//       .sort(sortOptions)
+//       .skip(skipAmount)
+//       .limit(pageSize)
+
+//     const totalUerCount = await User.countDocuments(query)
+//     const users = await userQuery.exec()
+//     const isNext = totalUserCount > skipAmount + user.length
+
+//     return {users, isNext}
+//   } catch (err: unknown) {
+//     if (err instanceof Error) {
+//       throw new Error(`Failed to fetch user: ${err.message}`);
+//     } else {
+//       console.log("Failed to fetch user", err);
+//     }
+//   }
+// }
+
+export const fetchUserAction = async ({
+  userId,
+  searchString = "",
+  pageNumber = 1,
+  pageSize = 20,
+  sortBy = "desc",
+}: FetchUserActionParams) => {
+  try {
+    const skipAmount = (pageNumber - 1) * pageSize;
+
+    const where: any = {
+      NOT: {
+        id: userId,
+      },
+    };
+
+    if (searchString.trim() !== "") {
+      where.OR = [
+        { username: { contains: searchString, mode: "insensitive" } },
+        { name: { contains: searchString, mode: "insensitive" } },
+      ];
+    }
+
+    const totalUserCount = await db.user.count({ where });
+
+    const users = await db.user.findMany({
+      where,
+      skip: skipAmount,
+      take: pageSize,
+      orderBy: {
+        createdAt: sortBy, // 'asc' ya da 'desc'
+      },
+    });
+
+    const isNext = totalUserCount > skipAmount + users.length;
+
+    return { users, isNext };
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      throw new Error(`Failed to fetch user: ${err.message}`);
+    } else {
+      console.error("Failed to fetch user", err);
     }
   }
 };
