@@ -20,26 +20,26 @@ const Page = async () => {
     image: userInfo ? userInfo?.image : user?.imageUrl,
   };
 
-  // if (user) {
-  //   const dbUser = await fetchUserById(user.id);
-  //   if (!dbUser) {
-  //     const userId = user.id;
-  //     const email = user.emailAddresses[0]?.emailAddress || "";
-  //     const username = user.username || "";
-  //     const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
-  //     const image = user.imageUrl || "";
-  //     const bio = "";
+  if (user) {
+    const dbUser = await fetchUserById(user.id);
+    if (!dbUser) {
+      const userId = user.id;
+      const email = user.emailAddresses[0]?.emailAddress || "";
+      const username = user.username || "";
+      const name = [user.firstName, user.lastName].filter(Boolean).join(" ");
+      const image = user.imageUrl || "";
+      const bio = "";
 
-  //     await createUserAction({
-  //       userId,
-  //       email,
-  //       username,
-  //       name,
-  //       image,
-  //       bio,
-  //     });
-  //   }
-  // }
+      await createUserAction({
+        userId,
+        email,
+        username,
+        name,
+        image,
+        bio,
+      });
+    }
+  }
   return (
     <>
       <main className="mx-auto flex flex-col justify-start px-10 py-20">
