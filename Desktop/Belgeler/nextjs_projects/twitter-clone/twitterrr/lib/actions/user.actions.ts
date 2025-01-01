@@ -165,42 +165,6 @@ export const updateUserAction = async ({
   }
 };
 
-// export const fetchUserAction =async ({userId, searchString='',pageNumber=1, pageSize=20, sortBy='desc'}:{
-//   userId: string; searchString?: string; pageNumber?: number; pageSize?:number; sortBy?:SortOrder;
-// })=> {
-//   try {
-//     const skipAmount = (pageNumber-1)*pageSize
-//     const regex = new RegExp(searchString,'i')
-//     const query :FilterQuery<typeof User>={
-//       id:{$ne:userId}
-//     }
-//     if(searchString.trim()!==''){
-//       query.$or=[
-//         {username:{$regex:regex}},
-//         {name:{$regex:regex}}
-//       ]
-//     }
-
-//     const sortOptions = {createdAt:sortBy}
-//     const userQuery = User.find(query)
-//       .sort(sortOptions)
-//       .skip(skipAmount)
-//       .limit(pageSize)
-
-//     const totalUerCount = await User.countDocuments(query)
-//     const users = await userQuery.exec()
-//     const isNext = totalUserCount > skipAmount + user.length
-
-//     return {users, isNext}
-//   } catch (err: unknown) {
-//     if (err instanceof Error) {
-//       throw new Error(`Failed to fetch user: ${err.message}`);
-//     } else {
-//       console.log("Failed to fetch user", err);
-//     }
-//   }
-// }
-
 export const fetchUserAction = async ({
   userId,
   searchString = "",
@@ -231,7 +195,7 @@ export const fetchUserAction = async ({
       skip: skipAmount,
       take: pageSize,
       orderBy: {
-        createdAt: sortBy, // 'asc' ya da 'desc'
+        createdAt: sortBy,
       },
     });
 

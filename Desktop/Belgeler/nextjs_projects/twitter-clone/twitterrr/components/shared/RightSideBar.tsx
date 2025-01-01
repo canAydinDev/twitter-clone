@@ -11,7 +11,7 @@ const RightSideBar = async () => {
     pageSize: 4,
   });
   if (!similarMinds) return <></>;
-  //hello
+
   return (
     <>
       <section className="custom-scrollbar rightsidebar">
