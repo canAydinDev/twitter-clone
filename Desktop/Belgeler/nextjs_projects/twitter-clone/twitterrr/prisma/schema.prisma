@@ -22,9 +22,10 @@ model User {
   retweets     Tweet[]  @relation("UserRetweets")
   likedTweets  Tweet[]  @relation("UserLikes")
   replies      Tweet[]  @relation("UserReplies")
-  groups Group[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  groups Group[] @relation("CreatedGroups") 
+  groupMemberships Group[] @relation("GroupMembers")
 }
 
 model Tweet { 
@@ -53,9 +54,16 @@ model Tweet {
   repliedBy    User[]   @relation("UserReplies")
 }
 
-model Group{
-  id String @id
-  user User @relation(fields:[userId], references: [id], onDelete: Cascade)
-  userId String
+model Group {
+  id       String @id
+  username String @unique
+  name     String
+  image    String?
+
+  createdBy   User?  @relation("CreatedGroups", fields: [createdById], references: [id], onDelete: Cascade)
+  createdById String?
+
   tweets Tweet[] @relation("GroupTweets")
+
+  members User[] @relation("GroupMembers")
 }

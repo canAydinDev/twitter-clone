@@ -2,6 +2,7 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import type { WebhookEvent } from "@clerk/clerk-sdk-node"; // <-- Dikkat!
 import { createUserAction } from "@/lib/actions/user.actions";
+import { createGroupAction } from "@/lib/actions/group.actions";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
@@ -44,6 +45,17 @@ export async function POST(req: Request) {
       username: user.username || "",
       image: user.image_url || "",
       bio: "",
+    });
+  }
+
+  if (evt.type === "organization.created") {
+    const { id, name, slug, image_url, created_by } = evt.data;
+    await createGroupAction({
+      id,
+      name,
+      username: slug || "",
+      image: image_url || "",
+      createdById: created_by,
     });
   }
 
