@@ -2,7 +2,13 @@ import { Webhook } from "svix";
 import { headers } from "next/headers";
 import type { WebhookEvent } from "@clerk/clerk-sdk-node"; // <-- Dikkat!
 import { createUserAction } from "@/lib/actions/user.actions";
-import { createGroupAction } from "@/lib/actions/group.actions";
+import {
+  addMemberToGroupAction,
+  createGroupAction,
+  deleteGroup,
+  removeUserFromGroupAction,
+  updateGroupInfo,
+} from "@/lib/actions/group.actions";
 
 export async function POST(req: Request) {
   const WEBHOOK_SECRET = process.env.WEBHOOK_SECRET;
@@ -57,6 +63,26 @@ export async function POST(req: Request) {
       image: image_url || "",
       createdById: created_by,
     });
+  }
+
+  if (evt.type === "organizationMembership.created") {
+    const { organization, public_user_data } = evt.data;
+    await addMemberToGroupAction(organization.id, public_user_data.user_id);
+  }
+
+  if (evt.type === "organizationMembership.deleted") {
+    const { organization, public_user_data } = evt.data;
+    await removeUserFromGroupAction(public_user_data.user_id, organization.id);
+  }
+
+  if (evt.type === "organization.updated") {
+    const { id, image_url, name, slug } = evt.data;
+    await updateGroupInfo(id, name, slug || "", image_url || "");
+  }
+
+  if (evt.type === "organization.deleted") {
+    const { id } = evt.data;
+    await deleteGroup(id || "");
   }
 
   return new Response("", { status: 200 });
