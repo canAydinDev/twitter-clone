@@ -27,17 +27,35 @@ model User {
   updatedAt DateTime @updatedAt
 }
 
-model Tweet {
-  id          String  @id @default(uuid())
-  user        User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      String
-  retweetedBy User[]  @relation("UserRetweets")
-  likedBy     User[]  @relation("UserLikes")
-  repliedBy   User[]  @relation("UserReplies")
+model Tweet { 
+  id           String  @id @default(uuid())
+  text         String
+  author       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  retweetOf    Tweet?   @relation("RetweetRelation", fields: [retweetOfId], references: [id])
+  retweetOfId  String?  
+  retweetChildren Tweet[] @relation("RetweetRelation")
+
+  group        Group?   @relation("GroupTweets", fields: [groupId], references: [id], onDelete: Cascade)
+  groupId      String?
+
+  createdAt    DateTime @default(now())
+
+  parent       Tweet?   @relation("ParentChildRelation", fields: [parentId], references: [id])
+  parentId     String?
+
+  children     Tweet[]  @relation("ParentChildRelation")
+
+  likes        Int      @default(0)
+
+  retweetedOf  User[]   @relation("UserRetweets")
+  likedBy      User[]   @relation("UserLikes")
+  repliedBy    User[]   @relation("UserReplies")
 }
 
 model Group{
   id String @id
   user User @relation(fields:[userId], references: [id], onDelete: Cascade)
   userId String
+  tweets Tweet[] @relation("GroupTweets")
 }
