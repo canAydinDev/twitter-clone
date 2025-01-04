@@ -15,10 +15,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { TweetValidation } from "@/lib/validations/tweet";
 import { usePathname, useRouter } from "next/navigation";
 import { createTweetAction } from "@/lib/actions/tweet.actions";
+import { useOrganization } from "@clerk/nextjs";
 interface Props {
   userId: string;
 }
 const PostTweet = ({ userId }: Props) => {
+  const { organization } = useOrganization();
   const pathname = usePathname();
   const router = useRouter();
   const form = useForm<z.infer<typeof TweetValidation>>({
@@ -34,6 +36,7 @@ const PostTweet = ({ userId }: Props) => {
       text: values.tweet,
       author: userId,
       path: pathname,
+      groupId: organization ? organization.id : null,
     });
     router.push("/");
   };
