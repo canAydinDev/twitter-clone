@@ -56,6 +56,11 @@ export async function POST(req: Request) {
 
   if (evt.type === "organization.created") {
     const { id, name, slug, image_url, created_by } = evt.data;
+
+    if (!created_by) {
+      throw new Error("created_by değeri eksik!");
+    }
+
     await createGroupAction({
       id,
       name,
