@@ -20,7 +20,7 @@ interface Props {
   userId: string;
 }
 const PostTweet = ({ userId }: Props) => {
-  const { organization } = useOrganization();
+  const { organization } = useOrganization() || null;
   const pathname = usePathname();
   const router = useRouter();
   const form = useForm<z.infer<typeof TweetValidation>>({
