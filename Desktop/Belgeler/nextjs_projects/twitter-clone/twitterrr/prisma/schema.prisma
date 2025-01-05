@@ -66,4 +66,5 @@ model Group {
   tweets Tweet[] @relation("GroupTweets")
 
   members User[] @relation("GroupMembers")
+  createdAt  DateTime @default(now())
 }

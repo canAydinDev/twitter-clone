@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import db from "../../utils/db";
+import { Prisma } from "@prisma/client";
 
 interface CreateGroupParams {
   id: string;
@@ -209,6 +210,70 @@ export const deleteGroup = async (groupId: string) => {
       throw new Error(`Error deleted group: ${err.message}`);
     } else {
       console.error("Error deleted group:", err);
+      throw err;
+    }
+  }
+};
+
+interface FetchGroupsParams {
+  searchString?: string;
+  pageNumber?: number;
+  pageSize?: number;
+  sortBy?: Prisma.SortOrder;
+}
+export const fetchGroups = async ({
+  searchString = "",
+  pageNumber = 1,
+  pageSize = 20,
+  sortBy = "desc",
+}: FetchGroupsParams) => {
+  try {
+    const skipAmount = (pageNumber - 1) * pageSize;
+
+    const whereClause =
+      searchString.trim() !== ""
+        ? {
+            OR: [
+              {
+                username: {
+                  contains: searchString,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+              {
+                name: {
+                  contains: searchString,
+                  mode: Prisma.QueryMode.insensitive,
+                },
+              },
+            ],
+          }
+        : {};
+
+    const orderByClause = { createdAt: sortBy };
+
+    const groups = await db.group.findMany({
+      where: whereClause,
+      orderBy: orderByClause,
+      skip: skipAmount,
+      take: pageSize,
+      include: {
+        members: true,
+      },
+    });
+
+    const totalGroupsCount = await db.group.count({
+      where: whereClause,
+    });
+
+    const isNext = totalGroupsCount > skipAmount + groups.length;
+
+    return { groups, isNext };
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      throw new Error(`Error fetch group: ${err.message}`);
+    } else {
+      console.error("Error fetch group:", err);
       throw err;
     }
   }
