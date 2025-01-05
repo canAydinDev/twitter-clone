@@ -21,36 +21,39 @@ export async function createGroupAction({
 }: CreateGroupParams) {
   try {
     const user = await db.user.findUnique({
-      where: {
-        id: createdById,
-      },
+      where: { id: createdById },
     });
+
     if (!user) {
-      throw new Error("User not found");
+      throw new Error(`User with ID ${createdById} not found`);
     }
 
     const createdGroup = await db.group.create({
       data: {
         id,
         name,
-        username,
-        image,
+        username: username || "default-username",
+        image: image || "https://example.com/default-image.png",
         createdBy: {
           connect: { id: createdById },
         },
       },
     });
 
-    revalidatePath("/groups");
+    try {
+      revalidatePath("/groups");
+    } catch (err) {
+      console.error("Failed to revalidate path:", err);
+    }
 
     return createdGroup;
   } catch (err: unknown) {
     if (err instanceof Error) {
+      console.error("Error creating group:", err.message);
       throw new Error(`Error creating group: ${err.message}`);
-    } else {
-      console.error("Error creating group:", err);
-      throw err;
     }
+    console.error("Unexpected error creating group:", err);
+    throw new Error("Unexpected error occurred while creating group");
   }
 }
 
