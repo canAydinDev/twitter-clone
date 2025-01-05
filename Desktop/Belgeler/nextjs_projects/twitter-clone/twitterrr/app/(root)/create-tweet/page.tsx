@@ -5,7 +5,10 @@ import { redirect } from "next/navigation";
 
 const Page = async () => {
   const user = await currentUser();
-  if (!user) return null;
+  if (!user) {
+    redirect("/");
+  }
+
   const userInfo = await fetchUserById(user.id);
   if (!userInfo?.onboarded) redirect("/onboarding");
   return (
