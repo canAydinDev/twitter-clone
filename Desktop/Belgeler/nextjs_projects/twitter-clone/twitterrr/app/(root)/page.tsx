@@ -4,11 +4,22 @@ import { currentUser } from "@clerk/nextjs/server";
 import db from "../../utils/db";
 
 export default async function Home() {
-  const user = await currentUser();
+  const user = (await currentUser()) || null;
+  const tweets = await db.tweet.findMany({
+    where: {
+      userId: user?.id,
+    },
+  });
 
   if (!user) {
     return <LandingPage />;
   }
 
-  return <></>;
+  return (
+    <>
+      {tweets.map((tweet, index) => {
+        return <h1 key={index}>{tweet.text}</h1>;
+      })}
+    </>
+  );
 }
