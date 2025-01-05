@@ -210,3 +210,78 @@ export const fetchUserAction = async ({
     }
   }
 };
+
+export async function likeOrDislikeTweet(
+  userId: string,
+  tweetId: string,
+  path: string
+) {
+  try {
+    // Transaction başlatıyoruz. Bu, tüm işlemlerin atomik olarak gerçekleştirilmesini sağlar.
+    await db.$transaction(async (prisma) => {
+      // Kullanıcının tweet'i beğenip beğenmediğini kontrol et
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          likedTweets: { where: { id: tweetId }, select: { id: true } },
+        },
+      });
+
+      if (!user) {
+        throw new Error("User not found");
+      }
+
+      const hasLiked = user.likedTweets.length > 0;
+
+      if (hasLiked) {
+        // Kullanıcı tweet'i zaten beğenmiş, bu yüzden beğenmeyi bırak
+        // 1. Tweet'in like sayısını azalt
+        const updatedTweet = await prisma.tweet.update({
+          where: { id: tweetId },
+          data: { likes: { decrement: 1 } },
+        });
+
+        if (!updatedTweet) {
+          throw new Error("Tweet not found");
+        }
+
+        // 2. Kullanıcının likedTweets listesinden tweet'i çıkar
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            likedTweets: {
+              disconnect: { id: tweetId },
+            },
+          },
+        });
+      } else {
+        // Kullanıcı tweet'i henüz beğenmemiş, bu yüzden beğen
+        // 1. Tweet'in like sayısını artır
+        const updatedTweet = await prisma.tweet.update({
+          where: { id: tweetId },
+          data: { likes: { increment: 1 } },
+        });
+
+        if (!updatedTweet) {
+          throw new Error("Tweet not found");
+        }
+
+        // 2. Kullanıcının likedTweets listesine tweet'i ekle
+        await prisma.user.update({
+          where: { id: userId },
+          data: {
+            likedTweets: {
+              connect: { id: tweetId },
+            },
+          },
+        });
+      }
+    });
+
+    // Path'i yeniden önbelleğe al (revalidate)
+    revalidatePath(path);
+  } catch (error: any) {
+    throw new Error(`Failed to like or dislike tweet: ${error.message}`);
+  }
+}

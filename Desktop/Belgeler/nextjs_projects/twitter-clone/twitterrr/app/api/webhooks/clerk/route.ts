@@ -55,19 +55,11 @@ export async function POST(req: Request) {
   }
 
   if (evt.type === "organization.created") {
-    console.log("Grup oluşturma tetiklendi.");
     const { id, name, slug, image_url, created_by } = evt.data;
 
     if (!created_by) {
       throw new Error("created_by değeri eksik!");
     }
-    console.log("createGroupAction çağrılıyor:", {
-      id,
-      name,
-      username: slug || "",
-      image: image_url || "",
-      createdById: created_by,
-    });
 
     await createGroupAction({
       id,
