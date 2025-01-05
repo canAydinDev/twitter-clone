@@ -198,6 +198,20 @@ export const fetchTweets = async (
                 image: true,
               },
             },
+            children: {
+              select: {
+                id: true,
+                text: true,
+                createdAt: true,
+                author: {
+                  select: {
+                    id: true,
+                    name: true,
+                    image: true,
+                  },
+                },
+              },
+            },
           },
         },
       },

@@ -1,9 +1,8 @@
 import LandingPage from "@/components/shared/LandingPage";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
-
 import { redirect } from "next/navigation";
-import { fetchTweets, isTweetByUser } from "@/lib/actions/tweet.actions";
+import { fetchTweets } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
 
 export default async function Home({
@@ -19,6 +18,7 @@ export default async function Home({
       </>
     );
   }
+
   const userInfo = await fetchUserByIdLiked(user.id);
   if (!userInfo?.onboarded) redirect("/onboarding");
 
@@ -27,75 +27,86 @@ export default async function Home({
     3
   );
 
+  const tweetsWithOwner = result.posts.map((tweet) => {
+    const isOwner = userInfo?.id === tweet.author.id;
+
+    // Retweet edilen tweet'i formatlıyoruz
+    const formattedRetweetOf = tweet.retweetOf
+      ? {
+          _id: tweet.retweetOf.id,
+          text: tweet.retweetOf.text,
+          parentId: tweet.retweetOf.parentId,
+          author: {
+            name: tweet.retweetOf.author.name,
+            image: tweet.retweetOf.author.image,
+            id: tweet.retweetOf.author.id,
+          },
+          group: tweet.retweetOf.group
+            ? {
+                id: tweet.retweetOf.group.id,
+                name: tweet.retweetOf.group.name,
+                image:
+                  tweet.retweetOf.group.image || "/default-group-image.png",
+              }
+            : null,
+          createdAt: new Date(tweet.retweetOf.createdAt).toISOString(), // ISO formatına dönüştürülüyor
+          children: tweet.children.map((child) => ({
+            author: {
+              image: child.author.image,
+            },
+          })),
+        }
+      : null;
+
+    // Grup bilgilerini formatlıyoruz
+    const formattedGroup = tweet.group
+      ? {
+          id: tweet.group.id,
+          name: tweet.group.name,
+          image: tweet.group.image || "/default-group-image.png",
+        }
+      : null;
+
+    return {
+      ...tweet,
+      isOwner,
+      formattedRetweetOf,
+      formattedGroup,
+    };
+  });
+
   return (
     <>
       <section className="mt-10 flex flex-col gap-10">
-        {result.posts.length === 0 ? (
+        {tweetsWithOwner.length === 0 ? (
           <p className="no-result">No tweets found</p>
         ) : (
-          <div>
-            {result.posts.map(async (tweet) => {
-              const isOwner = await isTweetByUser(userInfo?.id, tweet?.id);
-              const formattedRetweetOf = tweet.retweetOf
-                ? {
-                    _id: tweet.retweetOf.id, // 'id' yerine '_id' olarak yeniden adlandırıldı
-                    text: tweet.retweetOf.text,
-                    parentId: tweet.retweetOf.parentId,
-                    author: {
-                      name: tweet.retweetOf.author.name,
-                      image: tweet.retweetOf.author.image,
-                      id: tweet.retweetOf.author.id,
-                    },
-                    group: tweet.retweetOf.group
-                      ? {
-                          id: tweet.retweetOf.group.id,
-                          name: tweet.retweetOf.group.name,
-                          image:
-                            tweet.retweetOf.group.image ||
-                            "/default-group-image.png",
-                        }
-                      : null,
-                    createdAt: tweet.retweetOf.createdAt.toISOString(),
-                    children: tweet.retweetOf.children.map((child) => ({
-                      author: {
-                        image: child.author.image,
-                      },
-                    })),
-                  }
-                : null;
-              const formattedGroup = tweet.group
-                ? {
-                    id: tweet.group.id,
-                    name: tweet.group.name,
-                    image: tweet.group.image || "/default-group-image.png", // Null kontrolü ve varsayılan resim
-                  }
-                : null;
-              return (
-                <div className="mt-10">
-                  <TweetCard
-                    key={tweet.id}
-                    id={tweet.id}
-                    currentUserId={user.id}
-                    owner={isOwner}
-                    DB_userID={userInfo.id}
-                    retweetOf={formattedRetweetOf}
-                    parentId={tweet.parentId}
-                    content={tweet.text}
-                    author={tweet.author}
-                    group={formattedGroup}
-                    createdAt={tweet.createdAt}
-                    comments={tweet.children}
-                    likes={tweet.likes}
-                    liked={
-                      userInfo?.likedTweets?.some(
-                        (likedTweet) => likedTweet.id === tweet.id
-                      ) || false
-                    }
-                  />
-                </div>
-              );
-            })}
-          </div>
+          tweetsWithOwner.map((tweet) => (
+            <div className="mt-10" key={tweet.id}>
+              <TweetCard
+                id={tweet.id}
+                currentUserId={user.id}
+                owner={tweet.isOwner}
+                DB_userID={userInfo.id}
+                retweetOf={tweet.formattedRetweetOf}
+                parentId={tweet.parentId}
+                content={tweet.text}
+                author={tweet.author}
+                group={tweet.formattedGroup}
+                createdAt={new Date(tweet.createdAt).toISOString()} // ISO formatı
+                comments={tweet.children.map((child) => ({
+                  ...child,
+                  createdAt: new Date(child.createdAt).toISOString(), // Çocuk yorumlar için ISO formatı
+                }))}
+                likes={tweet.likes}
+                liked={
+                  userInfo?.likedTweets?.some(
+                    (likedTweet) => likedTweet.id === tweet.id
+                  ) || false
+                }
+              />
+            </div>
+          ))
         )}
       </section>
     </>
