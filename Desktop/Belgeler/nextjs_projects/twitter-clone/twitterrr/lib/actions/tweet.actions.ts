@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import db from "../../utils/db";
-import { Tweet } from "@prisma/client";
 
 interface TweetParams {
   text: string;
@@ -82,7 +81,51 @@ export const createTweetAction = async ({
 };
 
 interface FetchTweetsResult {
-  posts: Tweet[];
+  posts: Array<{
+    id: string;
+    text: string;
+    userId: string;
+    createdAt: string;
+    parentId: string | null;
+    likes: number;
+    author: {
+      id: string;
+      name: string;
+      image: string;
+    };
+    group: {
+      id: string;
+      name: string;
+      username: string;
+      image: string | null;
+    } | null;
+    children: Array<{
+      id: string;
+      createdAt: string;
+      text: string;
+      author: {
+        id: string;
+        name: string;
+        image: string;
+      };
+    }>;
+    retweetOf: {
+      id: string;
+      text: string;
+      parentId: string | null;
+      author: {
+        id: string;
+        name: string;
+        image: string;
+      };
+      group: {
+        id: string;
+        name: string;
+        image: string | null;
+      } | null;
+      createdAt: string;
+    } | null;
+  }>;
   isNext: boolean;
 }
 
@@ -97,6 +140,7 @@ export const fetchTweets = async (
       parentId: null,
     };
 
+    // Tweet'leri Prisma ile sorgula
     const posts = await db.tweet.findMany({
       where: filter,
       orderBy: {
@@ -118,11 +162,13 @@ export const fetchTweets = async (
             name: true,
             username: true,
             image: true,
-            // İhtiyacınıza göre diğer alanları ekleyebilirsiniz
           },
         },
         children: {
-          include: {
+          select: {
+            id: true,
+            createdAt: true,
+            text: true,
             author: {
               select: {
                 id: true,
@@ -133,8 +179,19 @@ export const fetchTweets = async (
           },
         },
         retweetOf: {
-          include: {
+          select: {
+            id: true,
+            text: true,
+            parentId: true,
+            createdAt: true,
             author: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+            group: {
               select: {
                 id: true,
                 name: true,
@@ -146,13 +203,31 @@ export const fetchTweets = async (
       },
     });
 
+    // Toplam tweet sayısını sorgula
     const totalPostsCount = await db.tweet.count({
       where: filter,
     });
 
+    // Daha fazla veri olup olmadığını kontrol et
     const isNext = totalPostsCount > skipAmount + posts.length;
 
-    return { posts, isNext };
+    // `createdAt`'ı string'e dönüştür
+    const formattedPosts = posts.map((post) => ({
+      ...post,
+      createdAt: post.createdAt.toISOString(),
+      children: post.children.map((child) => ({
+        ...child,
+        createdAt: child.createdAt.toISOString(),
+      })),
+      retweetOf: post.retweetOf
+        ? {
+            ...post.retweetOf,
+            createdAt: post.retweetOf.createdAt.toISOString(),
+          }
+        : null,
+    }));
+
+    return { posts: formattedPosts, isNext };
   } catch (error) {
     console.error("Error fetching tweets:", error);
     throw error;

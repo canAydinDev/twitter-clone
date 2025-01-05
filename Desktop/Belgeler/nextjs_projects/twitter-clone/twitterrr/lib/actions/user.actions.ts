@@ -132,6 +132,19 @@ export const fetchUserById = async (id: string) => {
   return user;
 };
 
+export async function fetchUserByIdLiked(userId: string) {
+  return await db.user.findUnique({
+    where: { id: userId },
+    include: {
+      likedTweets: {
+        select: {
+          id: true, // Sadece `id` alanını alıyoruz
+        },
+      },
+    },
+  });
+}
+
 export const updateUserAction = async ({
   userId,
   name,
