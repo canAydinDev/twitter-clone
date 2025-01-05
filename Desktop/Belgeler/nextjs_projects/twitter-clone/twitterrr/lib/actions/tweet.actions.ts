@@ -26,39 +26,30 @@ export const createTweetAction = async ({
           },
         })
       : null;
+
     const createdTweet = await db.tweet.create({
       data: {
+        text,
+        author: {
+          connect: { id: author },
+        },
+
         group: groupId ? { connect: { id: groupId } } : undefined,
+
         ...(retweetOf && {
           retweetOf: {
             connect: { id: retweetOf },
           },
         }),
-        text,
-        author: {
-          connect: {
-            id: author,
-          },
-        },
-        ...(retweetOf && {
-          retweetOf: {
-            connect: {
-              id: retweetOf,
-            },
-          },
-        }),
       },
     });
+
     if (retweetOf) {
       await db.user.update({
-        where: {
-          id: author,
-        },
+        where: { id: author },
         data: {
           retweets: {
-            connect: {
-              id: createdTweet.id,
-            },
+            connect: { id: createdTweet.id },
           },
         },
       });
@@ -71,9 +62,7 @@ export const createTweetAction = async ({
         },
         data: {
           tweets: {
-            connect: {
-              id: createdTweet.id,
-            },
+            connect: { id: createdTweet.id },
           },
         },
       });
@@ -86,6 +75,7 @@ export const createTweetAction = async ({
       throw new Error(`Failed to create tweet: ${err.message}`);
     } else {
       console.error("Failed to create tweet:", err);
+      throw err;
     }
   }
 };
