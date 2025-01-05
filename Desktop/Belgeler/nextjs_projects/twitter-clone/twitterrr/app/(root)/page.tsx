@@ -18,7 +18,11 @@ export default async function Home() {
   return (
     <>
       {tweets.map((tweet, index) => {
-        return <h1 key={index}>{tweet.text}</h1>;
+        return (
+          <h1 className="text-white" key={index}>
+            {tweet.text}
+          </h1>
+        );
       })}
     </>
   );
