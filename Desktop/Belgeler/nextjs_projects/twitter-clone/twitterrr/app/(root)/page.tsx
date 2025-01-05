@@ -2,7 +2,7 @@ import LandingPage from "@/components/shared/LandingPage";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
-import { fetchTweets } from "@/lib/actions/tweet.actions";
+import { fetchTweetChildren, fetchTweets } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
 
 export default async function Home({
@@ -27,53 +27,55 @@ export default async function Home({
     3
   );
 
-  const tweetsWithOwner = result.posts.map((tweet) => {
-    const isOwner = userInfo?.id === tweet.author.id;
+  const tweetsWithOwner = await Promise.all(
+    result.posts.map(async (tweet) => {
+      const isOwner = userInfo?.id === tweet.author.id;
 
-    // Retweet edilen tweet'i formatlıyoruz
-    const formattedRetweetOf = tweet.retweetOf
-      ? {
-          _id: tweet.retweetOf.id,
-          text: tweet.retweetOf.text,
-          parentId: tweet.retweetOf.parentId,
-          author: {
-            name: tweet.retweetOf.author.name,
-            image: tweet.retweetOf.author.image,
-            id: tweet.retweetOf.author.id,
-          },
-          group: tweet.retweetOf.group
-            ? {
-                id: tweet.retweetOf.group.id,
-                name: tweet.retweetOf.group.name,
-                image:
-                  tweet.retweetOf.group.image || "/default-group-image.png",
-              }
-            : null,
-          createdAt: new Date(tweet.retweetOf.createdAt).toISOString(), // ISO formatına dönüştürülüyor
-          children: tweet.children.map((child) => ({
+      // Retweet edilen tweet'i formatlıyoruz
+      const formattedRetweetOf = tweet.retweetOf
+        ? {
+            _id: tweet.retweetOf.id,
+            text: tweet.retweetOf.text,
+            parentId: tweet.retweetOf.parentId,
             author: {
-              image: child.author.image,
+              name: tweet.retweetOf.author.name,
+              image: tweet.retweetOf.author.image,
+              id: tweet.retweetOf.author.id,
             },
-          })),
-        }
-      : null;
+            group: tweet.retweetOf.group
+              ? {
+                  id: tweet.retweetOf.group.id,
+                  name: tweet.retweetOf.group.name,
+                  image:
+                    tweet.retweetOf.group.image || "/default-group-image.png",
+                }
+              : null,
+            createdAt: new Date(tweet.retweetOf.createdAt).toISOString(),
+            children: tweet.retweetOf.children.map((child) => ({
+              author: {
+                image: child.author.image,
+              },
+            })),
+          }
+        : null;
 
-    // Grup bilgilerini formatlıyoruz
-    const formattedGroup = tweet.group
-      ? {
-          id: tweet.group.id,
-          name: tweet.group.name,
-          image: tweet.group.image || "/default-group-image.png",
-        }
-      : null;
+      // Grup bilgilerini formatlıyoruz
+      const formattedGroup = tweet.group
+        ? {
+            id: tweet.group.id,
+            name: tweet.group.name,
+            image: tweet.group.image || "/default-group-image.png",
+          }
+        : null;
 
-    return {
-      ...tweet,
-      isOwner,
-      formattedRetweetOf,
-      formattedGroup,
-    };
-  });
+      return {
+        ...tweet,
+        isOwner,
+        formattedRetweetOf,
+        formattedGroup,
+      };
+    })
+  );
 
   return (
     <>

@@ -435,3 +435,58 @@ export const isTweetByUser = async (
     throw new Error(`Failed to check tweet ownership: ${error.message}`);
   }
 };
+
+interface FetchTweetChildrenResult {
+  children: Array<{
+    id: string;
+    text: string;
+    createdAt: string;
+    author: {
+      id: string;
+      name: string;
+      image: string;
+    };
+  }>;
+}
+
+export const fetchTweetChildren = async (
+  tweetId: string
+): Promise<FetchTweetChildrenResult> => {
+  try {
+    // Belirli bir tweet'in çocuklarını sorgula
+    const tweet = await db.tweet.findUnique({
+      where: { id: tweetId },
+      select: {
+        children: {
+          select: {
+            id: true,
+            text: true,
+            createdAt: true,
+            author: {
+              select: {
+                id: true,
+                name: true,
+                image: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!tweet || !tweet.children) {
+      return { children: [] }; // Eğer çocuk yoksa boş bir dizi döndür
+    }
+
+    // `createdAt` değerini string'e dönüştür
+    const formattedChildren = tweet.children.map((child) => ({
+      ...child,
+      createdAt: child.createdAt.toISOString(),
+    }));
+
+    return { children: formattedChildren };
+  } catch (error) {
+    console.error("Error fetching tweet children:", error);
+    throw new Error("Failed to fetch tweet children.");
+  }
+};
