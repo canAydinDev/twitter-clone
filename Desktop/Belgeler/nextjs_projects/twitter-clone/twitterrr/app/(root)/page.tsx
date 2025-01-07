@@ -1,15 +1,13 @@
+"use client";
 import LandingPage from "@/components/shared/LandingPage";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { fetchTweets, isTweetByUser } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
+import { useSearchParams } from "next/navigation";
 
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: { [key: string]: string | undefined };
-}) {
+export default async function Home() {
   try {
     const user = await currentUser();
     if (!user) {
@@ -21,10 +19,11 @@ export default async function Home({
       redirect("/onboarding");
     }
 
-    const result = await fetchTweets(
-      searchParams.page ? +searchParams.page : 1,
-      3
-    );
+    const searchParams = useSearchParams();
+    const page = searchParams.get("page")
+      ? Number(searchParams.get("page"))
+      : 1;
+    const result = await fetchTweets(page ? +page : 1, 3);
     console.log("Fetched tweets:", result);
 
     const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
