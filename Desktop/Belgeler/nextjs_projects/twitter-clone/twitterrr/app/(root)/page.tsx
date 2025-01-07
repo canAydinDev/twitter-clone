@@ -8,7 +8,7 @@ import TweetCard from "@/components/cards/TweetCards";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Record<string, string | undefined>; // Tür düzeltmesi
 }) {
   const user = await currentUser();
   if (!user) {
@@ -16,14 +16,16 @@ export default async function Home({
   }
 
   const userInfo = await fetchUserByIdLiked(user.id);
-  if (!userInfo?.onboarded) redirect("/onboarding");
+  if (!userInfo?.onboarded) {
+    redirect("/onboarding");
+  }
 
   const page = searchParams?.page ? Number(searchParams.page) : 1;
   const result = await fetchTweets(page, 3);
 
   const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
 
-  // Tüm `isTweetByUser` çağrılarını toplu olarak çöz
+  // `isTweetByUser` çağrılarını toplu olarak çöz
   const ownerStatuses = await Promise.all(
     result.posts.map((tweet) => isTweetByUser(userInfo?.id, tweet.id))
   );
@@ -38,7 +40,7 @@ export default async function Home({
             <TweetCard
               id={tweet.id}
               currentUserId={user.id}
-              owner={ownerStatuses[index]} // `Promise.all` ile çözülen sonuç
+              owner={ownerStatuses[index]} // `Promise.all` sonuçlarını kullanıyoruz
               DB_userID={userInfo.id}
               retweetOk={retweetOk[index]}
               parentId={tweet.parentId}
