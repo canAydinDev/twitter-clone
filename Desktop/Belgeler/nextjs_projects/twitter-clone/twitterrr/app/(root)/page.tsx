@@ -5,13 +5,11 @@ import { redirect } from "next/navigation";
 import { fetchTweets, isTweetByUser } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
 
-interface HomeProps {
-  searchParams?:
-    | Record<string, string | null>
-    | Promise<Record<string, string | null>>;
-}
-
-const Home = async ({ searchParams }: HomeProps) => {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | undefined };
+}) {
   const user = await currentUser();
   if (!user) {
     return <LandingPage />;
@@ -23,49 +21,40 @@ const Home = async ({ searchParams }: HomeProps) => {
   const page = searchParams?.page ? Number(searchParams.page) : 1;
   const result = await fetchTweets(page, 3);
 
-  const retweetOk = result.posts.map((tweet) => {
-    if (tweet.retweetOf) {
-      return true;
-    } else {
-      return false;
-    }
-  });
+  const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
+
+  // Tüm `isTweetByUser` çağrılarını toplu olarak çöz
+  const ownerStatuses = await Promise.all(
+    result.posts.map((tweet) => isTweetByUser(userInfo?.id, tweet.id))
+  );
 
   return (
-    <>
-      <section className="mt-10 flex flex-col gap-10">
-        {result.posts.length === 0 ? (
-          <p className="no-result">No tweets found</p>
-        ) : (
-          <div>
-            {result.posts.map(async (tweet) => {
-              const isOwner = await isTweetByUser(userInfo?.id, tweet?.id);
-              return (
-                <div className="mt-10">
-                  <TweetCard
-                    key={tweet.id}
-                    id={tweet.id}
-                    currentUserId={user.id}
-                    owner={isOwner}
-                    DB_userID={userInfo.id}
-                    retweetOk={retweetOk[0]}
-                    parentId={tweet.parentId}
-                    content={tweet.text}
-                    author={tweet.author}
-                    group={tweet.group}
-                    createdAt={tweet.createdAt}
-                    comments={tweet.children}
-                    likes={tweet.likes}
-                    liked={userInfo.likedTweets.some(
-                      (likedTweet) => likedTweet.id === tweet.id
-                    )}
-                  />
-                </div>
-              );
-            })}
+    <section className="mt-10 flex flex-col gap-10">
+      {result.posts.length === 0 ? (
+        <p className="no-result">No tweets found</p>
+      ) : (
+        result.posts.map((tweet, index) => (
+          <div className="mt-10" key={tweet.id}>
+            <TweetCard
+              id={tweet.id}
+              currentUserId={user.id}
+              owner={ownerStatuses[index]} // `Promise.all` ile çözülen sonuç
+              DB_userID={userInfo.id}
+              retweetOk={retweetOk[index]}
+              parentId={tweet.parentId}
+              content={tweet.text}
+              author={tweet.author}
+              group={tweet.group}
+              createdAt={tweet.createdAt}
+              comments={tweet.children}
+              likes={tweet.likes}
+              liked={userInfo.likedTweets.some(
+                (likedTweet) => likedTweet.id === tweet.id
+              )}
+            />
           </div>
-        )}
-      </section>
-    </>
+        ))
+      )}
+    </section>
   );
-};
+}
