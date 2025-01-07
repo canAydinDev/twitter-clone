@@ -8,7 +8,7 @@ import TweetCard from "@/components/cards/TweetCards";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Record<string, string | undefined>; // Tür doğru tanımlandı
+  searchParams: { [key: string]: string | undefined };
 }) {
   try {
     const user = await currentUser();
@@ -21,9 +21,10 @@ export default async function Home({
       redirect("/onboarding");
     }
 
-    const page = searchParams?.page ? Number(searchParams.page) : 1;
-
-    const result = await fetchTweets(page, 3);
+    const result = await fetchTweets(
+      searchParams.page ? +searchParams.page : 1,
+      3
+    );
     console.log("Fetched tweets:", result);
 
     const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
