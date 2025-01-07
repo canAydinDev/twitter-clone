@@ -407,6 +407,7 @@ export const deleteTweet = async (
     });
 
     // Path'i yeniden önbelleğe al
+    console.log("deleted tweet");
     revalidatePath(path);
   } catch (error: any) {
     throw new Error(`Failed to delete tweet: ${error.message}`);
