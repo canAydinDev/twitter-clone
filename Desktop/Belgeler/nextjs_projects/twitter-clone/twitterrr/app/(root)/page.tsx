@@ -1,11 +1,10 @@
-"use client";
 import LandingPage from "@/components/shared/LandingPage";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 import { fetchTweets, isTweetByUser } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
-import { useSearchParams } from "next/navigation";
+import { getSearchParams } from "@/lib/utils";
 
 export default async function Home() {
   try {
@@ -19,7 +18,7 @@ export default async function Home() {
       redirect("/onboarding");
     }
 
-    const searchParams = useSearchParams();
+    const searchParams = getSearchParams();
     const page = searchParams.get("page")
       ? Number(searchParams.get("page"))
       : 1;

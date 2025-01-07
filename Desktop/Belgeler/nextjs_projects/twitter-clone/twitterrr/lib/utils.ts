@@ -1,4 +1,5 @@
 import { clsx, type ClassValue } from "clsx";
+import { useSearchParams } from "next/navigation";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -23,4 +24,9 @@ export function formatDateString(dateString: string): string {
   };
   // Format the date using the options
   return date.toLocaleString("en-US", options);
+}
+
+export function getSearchParams() {
+  const params = useSearchParams();
+  return params;
 }
