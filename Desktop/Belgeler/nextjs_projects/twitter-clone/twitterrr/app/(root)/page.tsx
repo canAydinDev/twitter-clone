@@ -5,11 +5,11 @@ import { redirect } from "next/navigation";
 import { fetchTweets, isTweetByUser } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
 
-interface HomeProps {
-  searchParams: Record<string, string | null>;
-}
-
-export default async function Home({ searchParams }: HomeProps) {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: { [key: string]: string | undefined };
+}) {
   const user = await currentUser();
   if (!user) {
     return <LandingPage />;
