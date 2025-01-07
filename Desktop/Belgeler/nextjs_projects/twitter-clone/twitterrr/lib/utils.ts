@@ -25,8 +25,3 @@ export function formatDateString(dateString: string): string {
   // Format the date using the options
   return date.toLocaleString("en-US", options);
 }
-
-export async function getSearchParams() {
-  const params = await useSearchParams();
-  return params;
-}
