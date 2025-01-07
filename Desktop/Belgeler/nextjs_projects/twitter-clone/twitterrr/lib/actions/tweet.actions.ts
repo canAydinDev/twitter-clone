@@ -261,9 +261,7 @@ export const retweetTweet = async ({
   groupId,
 }: RetweetParams) => {
   try {
-    // Transaction başlatıyoruz. Bu, tüm işlemlerin atomik olarak gerçekleştirilmesini sağlar.
     await db.$transaction(async (prisma) => {
-      // 1. Kullanıcıyı bul
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: { retweets: { select: { id: true } } },
@@ -272,7 +270,6 @@ export const retweetTweet = async ({
         throw new Error("User not found");
       }
 
-      // 2. Orijinal tweet'i bul
       const originalTweet = await prisma.tweet.findUnique({
         where: { id: tweetId },
       });
@@ -311,7 +308,6 @@ export const retweetTweet = async ({
       });
     });
 
-    // 6. Path'i yeniden önbelleğe al
     revalidatePath(path);
   } catch (error: any) {
     throw new Error(`Failed to retweet: ${error.message}`);
@@ -324,12 +320,13 @@ export const deleteTweet = async (
   path: string
 ): Promise<void> => {
   try {
+    // Transaction başlat
     await db.$transaction(async (db) => {
       // 1. Tweet'i bul ve varlığını kontrol et
       const tweet = await db.tweet.findUnique({
         where: { id: tweetId },
         select: {
-          userId: true, // 'authorId' yerine 'userId'
+          userId: true,
           retweetOfId: true,
           parentId: true,
           groupId: true,
@@ -345,71 +342,83 @@ export const deleteTweet = async (
         throw new Error("You are not authorized to delete this tweet");
       }
 
-      // 3. Kullanıcının `tweets` alanından tweet'i çıkar
-      await db.user.update({
-        where: { id: userId },
-        data: {
-          tweets: {
-            disconnect: { id: tweetId },
-          },
-          ...(tweet.retweetOfId && {
-            retweets: {
-              disconnect: { id: tweet.retweetOfId },
-            },
-          }),
-          ...(tweet.parentId && {
-            replies: {
-              disconnect: { id: tweetId },
-            },
-          }),
-        },
-      });
+      // 3. İlişkileri temizle
+      const updatePromises = [];
 
-      // 4. Eğer tweet bir reply ise, parent tweet'in `children` alanından tweet'i çıkar
+      // Eğer tweet bir reply ise, parent tweet'ten bağlantısını kaldır
       if (tweet.parentId) {
-        await db.tweet.update({
-          where: { id: tweet.parentId },
-          data: {
-            children: {
-              disconnect: { id: tweetId },
+        updatePromises.push(
+          db.tweet.update({
+            where: { id: tweet.parentId },
+            data: {
+              children: {
+                disconnect: [{ id: tweetId }],
+              },
             },
-          },
-        });
+          })
+        );
       }
 
-      // 5. Eğer tweet bir gruba aitse, grubun `tweets` alanından tweet'i çıkar
+      // Eğer tweet bir gruba aitse, gruptan bağlantısını kaldır
       if (tweet.groupId) {
-        await db.group.update({
-          where: { id: tweet.groupId },
-          data: {
-            tweets: {
-              disconnect: { id: tweetId },
+        updatePromises.push(
+          db.group.update({
+            where: { id: tweet.groupId },
+            data: {
+              tweets: {
+                disconnect: [{ id: tweetId }],
+              },
             },
-          },
-        });
+          })
+        );
       }
 
-      if (tweet.groupId) {
-        await db.group.update({
-          where: { id: tweet.groupId }, // Grubun ID'sine göre eşleşme
-          data: {
-            tweets: {
-              disconnect: { id: tweetId }, // Tweet'i gruptan kaldırma
+      // Eğer tweet bir retweet ise, orijinal tweet'ten bağlantısını kaldır
+      if (tweet.retweetOfId) {
+        updatePromises.push(
+          db.tweet.update({
+            where: { id: tweet.retweetOfId },
+            data: {
+              retweetChildren: {
+                disconnect: [{ id: tweetId }],
+              },
             },
-          },
-        });
+          })
+        );
       }
 
-      // 7. Orijinal tweet'i sil
+      // Kullanıcının `retweets`, `likedTweets`, ve `replies` ilişkilerini temizle
+      updatePromises.push(
+        db.user.update({
+          where: { id: userId },
+          data: {
+            retweets: {
+              disconnect: [{ id: tweetId }],
+            },
+            likedTweets: {
+              disconnect: [{ id: tweetId }],
+            },
+            replies: {
+              disconnect: [{ id: tweetId }],
+            },
+          },
+        })
+      );
+
+      // Tüm bağlantı temizleme işlemlerini gerçekleştirin
+      await Promise.all(updatePromises);
+
+      // 4. Orijinal tweet'i sil
       await db.tweet.delete({
         where: { id: tweetId },
       });
     });
 
     // Path'i yeniden önbelleğe al
-    console.log("deleted tweet");
+    console.log("Deleted tweet");
     revalidatePath(path);
   } catch (error: any) {
+    console.error("Failed to delete tweet:", error.message);
     throw new Error(`Failed to delete tweet: ${error.message}`);
   }
 };

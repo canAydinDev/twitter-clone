@@ -1,9 +1,9 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { fetchTweets, isTweetByUser } from "@/lib/actions/tweet.actions";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
-
-import { redirect, useSearchParams } from "next/navigation";
+import { useSearchParams, redirect } from "next/navigation";
 import TweetCard from "../cards/TweetCards";
 
 interface Props {
@@ -20,37 +20,55 @@ interface Props {
   };
 }
 
-export default async function SearchParamsPage({ user }: Props) {
-  const userInfo = await fetchUserByIdLiked(user.id);
-  if (!userInfo?.onboarded) {
-    redirect("/onboarding");
-  }
-
+export default function SearchParamsPage({ user }: Props) {
   const searchParams = useSearchParams();
   const page = searchParams.get("page") ? Number(searchParams.get("page")) : 1;
-  const result = await fetchTweets(page ? +page : 1, 3);
-  console.log("Fetched tweets:", result);
 
-  const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
+  const [tweets, setTweets] = useState<any[]>([]);
+  const [ownerStatuses, setOwnerStatuses] = useState<boolean[]>([]);
+  const [userInfo, setUserInfo] = useState<any>(null);
 
-  const ownerStatuses = await Promise.all(
-    result.posts.map((tweet) => isTweetByUser(userInfo?.id, tweet.id))
-  );
+  useEffect(() => {
+    async function fetchData() {
+      const fetchedUserInfo = await fetchUserByIdLiked(user.id);
+      if (!fetchedUserInfo?.onboarded) {
+        redirect("/onboarding");
+        return;
+      }
+
+      setUserInfo(fetchedUserInfo);
+
+      const result = await fetchTweets(page, 3);
+      setTweets(result.posts);
+
+      const statuses = await Promise.all(
+        result.posts.map((tweet) => isTweetByUser(fetchedUserInfo.id, tweet.id))
+      );
+
+      setOwnerStatuses(statuses);
+    }
+
+    fetchData();
+  }, [page, user.id]);
+
+  if (!userInfo) {
+    return <p>Loading...</p>;
+  }
 
   return (
     <>
       <section className="mt-10 flex flex-col gap-10">
-        {result.posts.length === 0 ? (
+        {tweets.length === 0 ? (
           <p className="no-result">No tweets found</p>
         ) : (
-          result.posts.map((tweet, index) => (
+          tweets.map((tweet, index) => (
             <div className="mt-10" key={tweet.id}>
               <TweetCard
                 id={tweet.id}
                 currentUserId={user.id}
                 owner={ownerStatuses[index]}
                 DB_userID={userInfo.id}
-                retweetOk={retweetOk[index]}
+                retweetOk={!!tweet.retweetOf}
                 parentId={tweet.parentId}
                 content={tweet.text}
                 author={tweet.author}
@@ -59,7 +77,7 @@ export default async function SearchParamsPage({ user }: Props) {
                 comments={tweet.children}
                 likes={tweet.likes}
                 liked={userInfo.likedTweets.some(
-                  (likedTweet) => likedTweet.id === tweet.id
+                  (likedTweet: any) => likedTweet.id === tweet.id
                 )}
               />
             </div>

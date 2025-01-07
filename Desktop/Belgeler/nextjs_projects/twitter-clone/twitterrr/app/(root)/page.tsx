@@ -1,6 +1,6 @@
 import LandingPage from "@/components/shared/LandingPage";
+import SearchParamsPage from "@/components/staff/SearchParamsPage";
 import { currentUser } from "@clerk/nextjs/server";
-import SearchParamsPage from "@/components/ui/searchParamsPage";
 
 export default async function Home() {
   const user = await currentUser();

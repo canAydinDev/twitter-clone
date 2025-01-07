@@ -22,14 +22,14 @@ model User {
   retweets     Tweet[]  @relation("UserRetweets")
   likedTweets  Tweet[]  @relation("UserLikes")
   replies      Tweet[]  @relation("UserReplies")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  groups Group[] @relation("CreatedGroups") 
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  groups       Group[]  @relation("CreatedGroups") 
   groupMemberships Group[] @relation("GroupMembers")
 }
 
 model Tweet { 
-  id           String  @id @default(uuid())
+  id           String   @id @default(uuid())
   text         String
   author       User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
