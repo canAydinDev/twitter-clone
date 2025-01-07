@@ -26,7 +26,7 @@ export function formatDateString(dateString: string): string {
   return date.toLocaleString("en-US", options);
 }
 
-export function getSearchParams() {
-  const params = useSearchParams();
+export async function getSearchParams() {
+  const params = await useSearchParams();
   return params;
 }

@@ -18,7 +18,7 @@ export default async function Home() {
       redirect("/onboarding");
     }
 
-    const searchParams = getSearchParams();
+    const searchParams = await getSearchParams();
     const page = searchParams.get("page")
       ? Number(searchParams.get("page"))
       : 1;
@@ -27,7 +27,6 @@ export default async function Home() {
 
     const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
 
-    // `isTweetByUser` çağrılarını toplu olarak çöz
     const ownerStatuses = await Promise.all(
       result.posts.map((tweet) => isTweetByUser(userInfo?.id, tweet.id))
     );
