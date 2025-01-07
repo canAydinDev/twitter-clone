@@ -8,9 +8,11 @@ import TweetCard from "@/components/cards/TweetCards";
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Record<string, string | undefined>; // Tür düzeltmesi
+  searchParams: Promise<Record<string, string | undefined>>; // Promise türü
 }) {
+  const resolvedSearchParams = await searchParams; // Promise çözümü
   const user = await currentUser();
+
   if (!user) {
     return <LandingPage />;
   }
@@ -20,12 +22,14 @@ export default async function Home({
     redirect("/onboarding");
   }
 
-  const page = searchParams?.page ? Number(searchParams.page) : 1;
+  const page = resolvedSearchParams?.page
+    ? Number(resolvedSearchParams.page)
+    : 1;
   const result = await fetchTweets(page, 3);
 
   const retweetOk = result.posts.map((tweet) => !!tweet.retweetOf);
 
-  // `isTweetByUser` çağrılarını toplu olarak çöz
+  // Tüm `isTweetByUser` çağrılarını toplu olarak çöz
   const ownerStatuses = await Promise.all(
     result.posts.map((tweet) => isTweetByUser(userInfo?.id, tweet.id))
   );
