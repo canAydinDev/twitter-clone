@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import LandingPage from "@/components/shared/LandingPage";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
@@ -5,10 +6,14 @@ import { redirect } from "next/navigation";
 import { fetchTweetChildren, fetchTweets } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
 
+export const metadata: Metadata = {
+  title: "Home",
+};
+
 export default async function Home({
   searchParams,
 }: {
-  searchParams: { [key: string]: string | undefined };
+  searchParams: Record<string, string | undefined>;
 }) {
   const user = await currentUser();
   if (!user) {
@@ -31,7 +36,6 @@ export default async function Home({
     result.posts.map(async (tweet) => {
       const isOwner = userInfo?.id === tweet.author.id;
 
-      // Retweet edilen tweet'i formatlıyoruz
       const formattedRetweetOf = tweet.retweetOf
         ? {
             _id: tweet.retweetOf.id,
@@ -55,7 +59,6 @@ export default async function Home({
           }
         : null;
 
-      // Grup bilgilerini formatlıyoruz
       const formattedGroup = tweet.group
         ? {
             id: tweet.group.id,
@@ -72,7 +75,6 @@ export default async function Home({
       };
     })
   );
-  //hello
 
   return (
     <>
@@ -92,10 +94,10 @@ export default async function Home({
                 content={tweet.text}
                 author={tweet.author}
                 group={tweet.formattedGroup}
-                createdAt={new Date(tweet.createdAt).toISOString()} // ISO formatı
+                createdAt={new Date(tweet.createdAt).toISOString()}
                 comments={tweet.children.map((child) => ({
                   ...child,
-                  createdAt: new Date(child.createdAt).toISOString(), // Çocuk yorumlar için ISO formatı
+                  createdAt: new Date(child.createdAt).toISOString(),
                 }))}
                 likes={tweet.likes}
                 liked={
