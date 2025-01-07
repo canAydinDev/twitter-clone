@@ -51,11 +51,7 @@ export default async function Home({
                 }
               : null,
             createdAt: new Date(tweet.retweetOf.createdAt).toISOString(),
-            children: tweet.retweetOf.children.map((child) => ({
-              author: {
-                image: child.author.image,
-              },
-            })),
+            children: tweet.retweetOf,
           }
         : null;
 
