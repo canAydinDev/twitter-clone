@@ -1,4 +1,3 @@
-import { Metadata } from "next";
 import LandingPage from "@/components/shared/LandingPage";
 import { fetchUserByIdLiked } from "@/lib/actions/user.actions";
 import { currentUser } from "@clerk/nextjs/server";
@@ -6,14 +5,10 @@ import { redirect } from "next/navigation";
 import { fetchTweetChildren, fetchTweets } from "@/lib/actions/tweet.actions";
 import TweetCard from "@/components/cards/TweetCards";
 
-export const metadata: Metadata = {
-  title: "Home",
-};
-
 export default async function Home({
   searchParams,
 }: {
-  searchParams: Record<string, string | undefined>;
+  searchParams: { [key: string]: string | undefined };
 }) {
   const user = await currentUser();
   if (!user) {
@@ -28,7 +23,7 @@ export default async function Home({
   if (!userInfo?.onboarded) redirect("/onboarding");
 
   const result = await fetchTweets(
-    searchParams.page ? +searchParams.page : 1,
+    searchParams?.page ? Number(searchParams.page) : 1,
     3
   );
 
