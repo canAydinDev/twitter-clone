@@ -1,11 +1,12 @@
+import { formatDateString } from "@/lib/utils";
 import Image from "next/image";
 import Link from "next/link";
-import ShareTweetButton from "../shared/ShareTweetButton";
 import DeleteTweetButton from "../shared/DeleteTweetButton";
-import TweetLikeButton from "../shared/TweetLikeButton";
+import ShareTweetButton from "../shared/ShareTweetButton";
 import RetweetButton from "../shared/RetweetButton";
-import { formatDateString } from "@/lib/utils";
+import TweetLikeButton from "../shared/TweetLikeButton";
 interface Props {
+  retweetOk: boolean;
   id: string;
   currentUserId: string;
   DB_userID: string;
@@ -20,7 +21,8 @@ interface Props {
   group: {
     id: string;
     name: string;
-    image: string;
+    username: string;
+    image: string | null;
   } | null;
   createdAt: string;
   comments: {
@@ -67,6 +69,7 @@ const TweetCard = ({
   isComment,
   likes,
   liked,
+  retweetOk = false,
   retweetOf,
 }: Props) => {
   return (
@@ -122,7 +125,7 @@ const TweetCard = ({
                     tweetId={id}
                     userId={DB_userID}
                     groupId={group ? group.id : null}
-                    retweeted={retweetOf ? true : false}
+                    retweeted={retweetOk ? true : false}
                   />
                   <ShareTweetButton tweetPath={`/tweet/${id}`} />
                   {owner && (
@@ -174,7 +177,7 @@ const TweetCard = ({
               {group && ` - ${group.name} Group`}
             </p>
             <Image
-              src={group.image}
+              src={group.image ? group.image : "/hello"}
               alt={group.name}
               width={14}
               height={14}
